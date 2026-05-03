@@ -16,6 +16,7 @@ def plot_simulation_results(all_scenario_results: list):
     _plot_diminishing_returns(all_scenario_results)
     _plot_straggler(all_scenario_results)
     _plot_spending_by_position(all_scenario_results)
+    _plot_convergence(all_scenario_results)
 
 
 def _plot_distribution(all_scenario_results: list):
@@ -197,4 +198,33 @@ def _plot_spending_by_position(all_scenario_results: list):
 
     plt.tight_layout()
     plt.savefig(f"{OUTPUT_DIR}/gasto_por_posicion.png", dpi=150, bbox_inches="tight")
+    plt.close()
+
+def _plot_convergence(all_scenario_results: list):
+    """Convergencia del estimador Monte Carlo por escenario."""
+    fig, axes = plt.subplots(2, 3, figsize=(18, 8))
+    axes = axes.flatten()
+    fig.suptitle("Convergencia del estimador Monte Carlo",
+                 fontsize=13, fontweight="bold")
+
+    colors = ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D", "#3B1F2B", "#44BBA4"]
+
+    for ax, scenario, color in zip(axes, all_scenario_results, colors):
+        n = scenario["num_collectors"]
+        spent_list = [r["avg_spent_per_collector_mxn"] for r in scenario["all_results"]]
+
+        cumulative_avg = [sum(spent_list[:i+1]) / (i+1) for i in range(len(spent_list))]
+
+        ax.plot(range(1, len(cumulative_avg)+1), cumulative_avg, color=color, linewidth=1.5)
+        ax.axhline(cumulative_avg[-1], color="black", linestyle="--", linewidth=1,
+                   label=f"Promedio final: ${cumulative_avg[-1]:,.0f}")
+        ax.set_title(f"{n} coleccionador{'es' if n > 1 else ''}", fontsize=10)
+        ax.set_xlabel("Numero de simulaciones", fontsize=8)
+        ax.set_ylabel("Gasto promedio acumulado (MXN)", fontsize=8)
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"${x:,.0f}"))
+        ax.legend(fontsize=8)
+        ax.grid(axis="y", linestyle="--", alpha=0.4)
+
+    plt.tight_layout()
+    plt.savefig(f"{OUTPUT_DIR}/convergencia.png", dpi=150, bbox_inches="tight")
     plt.close()
